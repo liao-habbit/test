@@ -1,6 +1,6 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance
-url = "http://localhost:6333"
+# url = "http://localhost:6333"
 def to_create_collection(url, name, vector_size = 768):
     client = QdrantClient(url = url)
     existing_collections = [c.name for c in client.get_collections().collections]

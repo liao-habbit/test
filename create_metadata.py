@@ -51,7 +51,7 @@ def from_xml_to_image_metadata(xml_dir):
         }
 
         metadata_list.append(image_meta)
-        print(f"metadata ✅")
+    print(f"metadata ✅")
     return metadata_list
 
 # 測試用

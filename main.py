@@ -1,6 +1,6 @@
 from transformers import AutoImageProcessor, AutoModel
 from create_metadata import from_xml_to_image_metadata
-from Qdrant_operation.operations import to_create_collection,to_delete_collection, upload
+from Qdrant_operation.operations import to_create_collection, to_delete_collection, upload
 import os
 from PIL import Image
 import torch 
@@ -46,26 +46,28 @@ def generate_embeddings_by_metadata(metadata_list, img_dir, processor, model, de
 # 進行下游任務，給予 embedding 加上任意的 head (classification, segmentation)
 # 檢索相關資料，透過 Qdrant 設定篩選條件調出 embedding 就好 
 
+
+def uploads(xml_dirs, img_dirs, collection_names):
+    for xml_dir, image_dir, collection_name in zip(xml_dirs,img_dirs,collection_names):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model_name = "facebook/dinov2-base"
+        processor = AutoImageProcessor.from_pretrained(model_name, use_fast=True)
+        model = AutoModel.from_pretrained(model_name)
+        model = model.to(device) 
+        model.eval() 
+        metadata = from_xml_to_image_metadata(xml_dir)
+        _, embedding_list = generate_embeddings_by_metadata(metadata, image_dir, processor, model, device)
+        db_url = "http://192.168.1.30:6333"
+        to_create_collection(url=db_url, name = collection_name, vector_size = 768)
+        upload(url = db_url, embedding_list = embedding_list, metadata = metadata, collection = collection_name)
+
 def main():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    processor = AutoImageProcessor.from_pretrained(model_name, use_fast=True)
-    model_name = "facebook/dinov2-base"
-    model = AutoModel.from_pretrained(model_name)
-    model.eval() 
-    print(f"{model_name} 載入完成\n開始產生 metadata")
-    
-    # 先產生 metadata
-    xml_dir = r"C:\Users\user\Downloads\水稻病害徵狀影像資料集\水稻病害徵狀影像資料集\標註檔"
-    rice_disease_metadata = from_xml_to_image_metadata(xml_dir)
-    
-    # 根據 metadata 的 filename 資訊找出 img_dir 的絕對路徑
-    img_dir = r"c:\Users\user\Downloads\水稻病害徵狀影像資料集\水稻病害徵狀影像資料集\影像檔"
-    _, embedding_list = generate_embeddings_by_metadata(rice_disease_metadata, img_dir, processor, model, device)
-    
-    # 建立 Qdrant collection
-    db_url = "http://localhost:6333"
-    to_create_collection(url=db_url, name = "rice_disease", vector_size = 768)
-    upload(url = db_url, embedding_list = embedding_list, metadata = rice_disease_metadata, collection= "test")
+    xml_dirs = [r"C:\Users\user\Downloads\水稻病害徵狀影像資料集\水稻病害徵狀影像資料集\標註檔",
+                r"C:\Users\user\Downloads\茶病害徵狀影像資料集\標註檔"] 
+    img_dirs = [r"C:\Users\user\Downloads\水稻病害徵狀影像資料集\水稻病害徵狀影像資料集\影像檔",
+                r"C:\Users\user\Downloads\茶病害徵狀影像資料集\影像集"] 
+    collection_names = ["rice disease DINOv2 pretrained", "tea disease DINOv2 pretrained"]
+    uploads(xml_dirs,img_dirs,collection_names)
 
 if __name__ == "__main__":
     main()
