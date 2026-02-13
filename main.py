@@ -57,7 +57,7 @@ def uploads(xml_dirs, img_dirs, collection_names):
         model.eval() 
         metadata = from_xml_to_image_metadata(xml_dir)
         _, embedding_list = generate_embeddings_by_metadata(metadata, image_dir, processor, model, device)
-        db_url = "http://192.168.1.30:6333"
+        db_url = "http://localhost:6333"
         to_create_collection(url=db_url, name = collection_name, vector_size = 768)
         upload(url = db_url, embedding_list = embedding_list, metadata = metadata, collection = collection_name)
 
